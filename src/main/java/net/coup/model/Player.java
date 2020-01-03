@@ -43,10 +43,6 @@ public class Player {
         return name;
     }
 
-    public int getLife() {
-        return privateCards.size();
-    }
-
     public int getCoins() {
         return coins;
     }

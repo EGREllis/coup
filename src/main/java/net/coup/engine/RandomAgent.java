@@ -42,4 +42,10 @@ public class RandomAgent implements Agent {
         List<Card> result = new ArrayList<>(Constants.HAND_SIZE);
         return result;
     }
+
+    @Override
+    public Move selectMove(List<Move> validMoves, Board board, Player player) {
+        int index = (int)(validMoves.size() * Math.random());
+        return validMoves.get(index);
+    }
 }

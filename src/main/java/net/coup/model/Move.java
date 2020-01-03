@@ -22,4 +22,9 @@ public class Move {
     public Action getAction() {
         return action;
     }
+
+    @Override
+    public String toString() {
+        return String.format("Player(%1$s) performing %2$s on player(%3$s)", source.getName(), action, target.getName());
+    }
 }

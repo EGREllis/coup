@@ -75,7 +75,7 @@ public class Board {
         Map<String, Player> newPlayerMap = new HashMap<>();
         newPlayerMap.putAll(players);
         newPlayerMap.put(player.getName(), player);
-        return new Board(players, court);
+        return new Board(newPlayerMap, court);
     }
 
     public boolean isGameOver() {
@@ -86,5 +86,16 @@ public class Board {
             }
         }
         return playersWithOnlyPublicCards >= players.size() - 1;
+    }
+
+    public List<Player> getOtherPlayers(Player player) {
+        List<Player> others = new ArrayList<>();
+        for (Map.Entry<String,Player> entry : players.entrySet()) {
+            if (entry.getKey().equals(player.getName())) {
+                continue;
+            }
+            others.add(entry.getValue());
+        }
+        return others;
     }
 }

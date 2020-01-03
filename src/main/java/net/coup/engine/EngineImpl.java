@@ -124,7 +124,7 @@ public class EngineImpl implements Engine {
                 Player target = move.getTarget();
                 int amount = Math.min(target.getCoins(), Constants.STEAL_AMOUNT);
                 source = source.setCoins(source.getCoins() + amount);
-                target = target.setCoins(source.getCoins() - amount);
+                target = target.setCoins(target.getCoins() - amount);
                 board = board.replacePlayer(source);
                 return board.replacePlayer(target);
             }

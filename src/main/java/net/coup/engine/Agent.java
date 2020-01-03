@@ -13,4 +13,5 @@ public interface Agent {
     boolean challengeBlock(String blocker, Board board, Move move);
     boolean blockMove(Board board, Move move);
     List<Card> selectHand(Board board, List<Card> options);
+    Move selectMove(List<Move> validMoves, Board board, Player player);
 }
