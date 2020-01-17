@@ -3,8 +3,6 @@ package net.coup.model;
 import java.util.*;
 
 public class Board {
-    private static final int INITIAL_NCARDS = 2;
-    private static final int INITIAL_COINS = 0;
     private static final List<Card> CARDS = Arrays.asList(
             Card.AMBASSADOR,   Card.AMBASSADOR,   Card.AMBASSADOR,
             Card.ASSASSIN,     Card.ASSASSIN,     Card.ASSASSIN,
@@ -50,10 +48,10 @@ public class Board {
             String name = names.get(i);
             List<Card> playerCards = new ArrayList<>(Constants.HAND_SIZE);
             List<Card> publicCards = new ArrayList<>(Constants.HAND_SIZE);
-            for (int j = 0; j < INITIAL_NCARDS; j++) {
+            for (int j = 0; j < Constants.HAND_SIZE; j++) {
                 playerCards.add(deck.pop());
             }
-            players.put(name, new Player(playerCards, publicCards, name, INITIAL_COINS));
+            players.put(name, new Player(playerCards, publicCards, name, Constants.STARTING_COINS));
         }
         return new Board(players, deck);
     }
@@ -79,13 +77,13 @@ public class Board {
     }
 
     public boolean isGameOver() {
-        int playersWithOnlyPublicCards = 0;
+        int deadPlayers = 0;
         for (Player player : players.values()) {
-            if (player.getPublicCards().size() == Constants.HAND_SIZE) {
-                playersWithOnlyPublicCards++;
+            if (!player.isAlive()) {
+                deadPlayers++;
             }
         }
-        return playersWithOnlyPublicCards >= players.size() - 1;
+        return deadPlayers >= players.size() - 1;
     }
 
     public List<Player> getOtherPlayers(Player player) {

@@ -54,4 +54,8 @@ public class Player {
     public String toString() {
         return String.format("Name: %1$s Coins: %2$d Card: %3$s, %4$s", name, coins, privateCards.size() >= 1 ? privateCards.get(0) : "", privateCards.size() >= 2 ? privateCards.get(1) : "");
     }
+
+    public boolean isAlive() {
+        return publicCards.size() < Constants.HAND_SIZE;
+    }
 }

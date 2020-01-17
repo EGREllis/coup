@@ -25,7 +25,7 @@ public class App {
         while (!board.isGameOver()) {
             for (String name : names) {
                 Player player = board.getPlayers().get(name);
-                if (player.getPublicCards().size() == Constants.HAND_SIZE) {
+                if (!player.isAlive()) {
                     // This player is dead
                     continue;
                 }
@@ -46,7 +46,7 @@ public class App {
         Set<Action> validActions = new HashSet<>();
         for (Action action : Action.values()) {
             if (    action.getCost() <= player.getCoins() &&
-                    action.getImplies() == null || hand.contains(action.getImplies())) {
+                    (action.getImplies() == null || hand.contains(action.getImplies()))) {
                 validActions.add(action);
             }
         }
@@ -62,13 +62,13 @@ public class App {
                 case FOREIGN_AID:
                 case TAX:
                 case EXCHANGE:
-                    moves.add(new Move(player, player, action));
+                    moves.add(new Move(player.getName(), player.getName(), action));
                     break;
                 case STEAL:
                     others = board.getOtherPlayers(player);
                     for (Player other : others) {
                         if (other.getCoins() > 0) {
-                            moves.add(new Move(player, other, action));
+                            moves.add(new Move(player.getName(), other.getName(), action));
                         }
                     }
                     break;
@@ -77,7 +77,7 @@ public class App {
                     others = board.getOtherPlayers(player);
                     for (Player other : others) {
                         if (other.getPublicCards().size() < Constants.HAND_SIZE) {
-                            moves.add(new Move(player, other, action));
+                            moves.add(new Move(player.getName(), other.getName(), action));
                         }
                     }
                     break;

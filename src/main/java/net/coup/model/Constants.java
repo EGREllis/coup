@@ -13,4 +13,5 @@ public class Constants {
     public static final int COUP_COIN_COST = 7;
     public static final int ASSASSINATION_COIN_COST = 3;
     public static final int HAND_SIZE = 2;
+    public static final int STARTING_COINS = 2;
 }

@@ -12,7 +12,10 @@ public class RandomAgent implements Agent {
     public Card selectCardToSacrafice(Board board, Player player) {
         List<Card> cards = new ArrayList<>();
         cards = player.getOptions(cards);
-        int index = (int)(Math.random() * (cards.size()));
+        int index = cards.size();
+        while (index >= cards.size()) {
+            index = (int) (Math.random() * (cards.size()));
+        }
         Card cardToRemove = cards.get(index);
         return cardToRemove;
     }
@@ -45,7 +48,10 @@ public class RandomAgent implements Agent {
 
     @Override
     public Move selectMove(List<Move> validMoves, Board board, Player player) {
-        int index = (int)(validMoves.size() * Math.random());
+        int index = validMoves.size();
+        while (index >= validMoves.size()) {
+            index = (int) (validMoves.size() * Math.random());
+        }
         return validMoves.get(index);
     }
 }

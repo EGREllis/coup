@@ -9,6 +9,28 @@ import static net.coup.model.Constants.EMPTY_STRING;
 
 public class EngineImpl implements Engine {
     @Override
+    public boolean isValid(Board board, Move move) {
+        boolean valid = false;
+        switch(move.getAction()) {
+            case INCOME:
+            case FOREIGN_AID:
+            case EXCHANGE:
+            case TAX:
+                valid = true;
+                break;
+            case COUP:
+            case ASSASSINATE:
+            case STEAL:
+                Player source = board.getPlayers().get(move.getSource());
+                Player target = board.getPlayers().get(move.getTarget());
+                valid = source.getCoins() >= move.getAction().getCost() &&
+                        source.isAlive() && target.isAlive();
+                break;
+        }
+        return valid;
+    }
+
+    @Override
     public Board processTurn(Board board, Move move, Map<String, Agent> agents) {
         switch(move.getAction()) {
             case INCOME:
@@ -39,8 +61,8 @@ public class EngineImpl implements Engine {
     }
 
     private Board processIncome(Board board, Move move, Map<String,Agent> agents) {
-        Player source = move.getSource();
-        source = source.setCoins(source.getCoins() + Constants.INCOME_AMOUNT);
+        Player source = board.getPlayers().get(move.getSource());
+        source = source.setCoins(source.getCoins() + move.getAction().getIncome());
         return board.replacePlayer(source);
     }
 
@@ -54,7 +76,7 @@ public class EngineImpl implements Engine {
             }
         } else {
             // Not blocked
-            Player source = move.getSource();
+            Player source = board.getPlayers().get(move.getSource());
             source = source.setCoins(source.getCoins() + Constants.FOREIGN_AID_AMOUNT);
             return board.replacePlayer(source);
         }
@@ -67,7 +89,7 @@ public class EngineImpl implements Engine {
             //TODO: Resolve the challenge
         } else {
             // Not blocked
-            Player source = move.getSource();
+            Player source = board.getPlayers().get(move.getSource());
             source = source.setCoins(source.getCoins() + Constants.TAX_AMOUNT);
             return board.replacePlayer(source);
         }
@@ -80,13 +102,13 @@ public class EngineImpl implements Engine {
             //TODO: Resolve the challenge
         } else {
             // Not blocked
-            Player source = move.getSource();
+            Player source = board.getPlayers().get(move.getSource());
             List<Card> newCards = board.getExchangeCards();
             newCards = source.getOptions(newCards);
-            Agent agent = agents.get(move.getSource().getName());
+            Agent agent = agents.get(move.getSource());
             List<Card> newHand = agent.selectHand(board, newCards);
             newCards.removeAll(newHand);
-            board.returnExchangeCards(newHand); //TODO: Make an immutable version
+            board.returnExchangeCards(newCards); //TODO: Make an immutable version
             source = source.setHand(newHand);
             return board.replacePlayer(source);
         }
@@ -94,11 +116,11 @@ public class EngineImpl implements Engine {
     }
 
     private Board processCoup(Board board, Move move, Map<String,Agent> agents) {
-        Player source = move.getSource();
+        Player source = board.getPlayers().get(move.getSource());
         source = source.setCoins(source.getCoins() - Constants.COUP_COIN_COST);
         board = board.replacePlayer(source);
-        Player target = move.getTarget();
-        Agent agent = agents.get(move.getTarget().getName());
+        Player target = board.getPlayers().get(move.getTarget());
+        Agent agent = agents.get(move.getTarget());
         Card toLose = agent.selectCardToSacrafice(board, target);
         target = target.removeCardFromHand(toLose);
         return board.replacePlayer(target);
@@ -111,7 +133,7 @@ public class EngineImpl implements Engine {
         } else {
             String blocker = getBlockers(board, move, agents);
             if (!blocker.isEmpty()) {
-                Agent sourceAgent = agents.get(move.getSource().getName());
+                Agent sourceAgent = agents.get(move.getSource());
                 if (sourceAgent.challengeBlock(blocker, board, move)) {
                     //TODO: Resolve block challenge
                 } else {
@@ -120,8 +142,8 @@ public class EngineImpl implements Engine {
                 }
             } else {
                 // Neither challenged nor blocked...
-                Player source = move.getSource();
-                Player target = move.getTarget();
+                Player source = board.getPlayers().get(move.getSource());
+                Player target = board.getPlayers().get(move.getTarget());
                 int amount = Math.min(target.getCoins(), Constants.STEAL_AMOUNT);
                 source = source.setCoins(source.getCoins() + amount);
                 target = target.setCoins(target.getCoins() - amount);
@@ -139,7 +161,7 @@ public class EngineImpl implements Engine {
         } else {
             String blocker = getBlockers(board, move, agents);
             if (!blocker.isEmpty()) {
-                Agent sourceAgent = agents.get(move.getSource().getName());
+                Agent sourceAgent = agents.get(move.getSource());
                 if (sourceAgent.challengeBlock(blocker, board, move)) {
                     //TODO: Resolve block challenge
                 } else {
@@ -148,11 +170,11 @@ public class EngineImpl implements Engine {
                 }
             } else {
                 // Not challenged or blocked
-                Player source = move.getSource();
+                Player source = board.getPlayers().get(move.getSource());
                 source = source.setCoins(source.getCoins() - Constants.ASSASSINATION_COIN_COST);
                 board = board.replacePlayer(source);
-                Agent targetAgent = agents.get(move.getTarget().getName());
-                Player target = move.getTarget();
+                Agent targetAgent = agents.get(move.getTarget());
+                Player target = board.getPlayers().get(move.getTarget());
                 Card cardToLose = targetAgent.selectCardToSacrafice(board, target);
                 target = target.removeCardFromHand(cardToLose);
                 return board.replacePlayer(target);
@@ -164,7 +186,7 @@ public class EngineImpl implements Engine {
     private String getChallengers(Board board, Move move, Map<String, Agent> agents) {
         //TODO: Check challenges in player order
         for (Map.Entry<String,Agent> entry : agents.entrySet()) {
-            if (entry.getKey().equals(move.getSource().getName())) {
+            if (entry.getKey().equals(move.getSource())) {
                 // Never challenge oneself!
                 continue;
             }
@@ -179,7 +201,7 @@ public class EngineImpl implements Engine {
     private String getBlockers(Board board, Move move, Map<String,Agent> agents) {
         //TODO: Check blocks in player order
         for (Map.Entry<String, Agent> entry : agents.entrySet()) {
-            if (entry.getKey().equals(move.getSource().getName())) {
+            if (entry.getKey().equals(move.getSource())) {
                 // Never block oneself!
                 continue;
             }
@@ -192,7 +214,7 @@ public class EngineImpl implements Engine {
     }
 
     private boolean challengeBlock(String blocker, Board board, Move move, Map<String, Agent> agents) {
-        Agent myself = agents.get(move.getSource().getName());
+        Agent myself = agents.get(move.getSource());
         return myself.challengeBlock(blocker, board, move);
     }
 }
