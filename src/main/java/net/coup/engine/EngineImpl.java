@@ -2,10 +2,12 @@ package net.coup.engine;
 
 import net.coup.model.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static net.coup.model.Constants.EMPTY_STRING;
+import static net.coup.model.Constants.HAND_SIZE;
 
 public class EngineImpl implements Engine {
     @Override
@@ -100,19 +102,24 @@ public class EngineImpl implements Engine {
         String challenger = getChallengers(board, move, agents);
         if (!challenger.isEmpty()) {
             //TODO: Resolve the challenge
+            return null;
         } else {
             // Not blocked
             Player source = board.getPlayers().get(move.getSource());
+            int initialBoardSize = board.getCards().size();
             List<Card> newCards = board.getExchangeCards();
-            newCards = source.getOptions(newCards);
+            List<Card> options = new ArrayList<>(newCards.size()+HAND_SIZE);
+            options.addAll(newCards);
+            options = source.getOptions(options);
             Agent agent = agents.get(move.getSource());
-            List<Card> newHand = agent.selectHand(board, newCards);
-            newCards.removeAll(newHand);
+            List<Card> newHand = agent.selectHand(board, options);
+            options.removeAll(newHand);
             board.returnExchangeCards(newCards); //TODO: Make an immutable version
             source = source.setHand(newHand);
-            return board.replacePlayer(source);
+            Board result = board.replacePlayer(source);
+            assert initialBoardSize == result.getCards().size() : String.format("Board size should not change (Previous %1$d; Actual %2$d)", initialBoardSize, result.getCards().size());
+            return result;
         }
-        return null;
     }
 
     private Board processCoup(Board board, Move move, Map<String,Agent> agents) {

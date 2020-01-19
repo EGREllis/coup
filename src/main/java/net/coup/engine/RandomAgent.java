@@ -43,6 +43,9 @@ public class RandomAgent implements Agent {
             indices.add(index);
         }
         List<Card> result = new ArrayList<>(Constants.HAND_SIZE);
+        for (int index : indices) {
+            result.add(options.get(index));
+        }
         return result;
     }
 
