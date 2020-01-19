@@ -34,6 +34,20 @@ public class EngineImpl implements Engine {
 
     @Override
     public Board processTurn(Board board, Move move, Map<String, Agent> agents) {
+        String challenger = getChallengers(board, move, agents);
+        if (challenger.length() > 0) {
+            //TODO: Resolve challenge
+        }
+        if (move.getAction().getBlocks().size() > 0) {
+            String blocker = getBlockers(board, move, agents);
+            if (blocker.length() > 0) {
+                if (challengeBlock(blocker, board, move, agents)) {
+                    //TODO: Resolve Block Challenge
+                } else {
+                    return board;
+                }
+            }
+        }
         switch(move.getAction()) {
             case INCOME:
                 board = processIncome(board, move, agents);
@@ -69,57 +83,32 @@ public class EngineImpl implements Engine {
     }
 
     private Board processForeignAid(Board board, Move move, Map<String,Agent> agents) {
-        String blocker = getBlockers(board, move, agents);
-        if (!blocker.isEmpty()) {
-            if (challengeBlock(blocker, board, move, agents)) {
-                //TODO: Resolve the challenge to the block
-            } else {
-                return board;
-            }
-        } else {
-            // Not blocked
-            Player source = board.getPlayers().get(move.getSource());
-            source = source.setCoins(source.getCoins() + Constants.FOREIGN_AID_AMOUNT);
-            return board.replacePlayer(source);
-        }
-        return null;
+        Player source = board.getPlayers().get(move.getSource());
+        source = source.setCoins(source.getCoins() + Constants.FOREIGN_AID_AMOUNT);
+        return board.replacePlayer(source);
     }
 
     private Board processTax(Board board, Move move, Map<String,Agent> agents) {
-        String challenger = getChallengers(board, move, agents);
-        if (!challenger.isEmpty()) {
-            //TODO: Resolve the challenge
-        } else {
-            // Not blocked
-            Player source = board.getPlayers().get(move.getSource());
-            source = source.setCoins(source.getCoins() + Constants.TAX_AMOUNT);
-            return board.replacePlayer(source);
-        }
-        return null;
+        Player source = board.getPlayers().get(move.getSource());
+        source = source.setCoins(source.getCoins() + Constants.TAX_AMOUNT);
+        return board.replacePlayer(source);
     }
 
     private Board processExchange(Board board, Move move, Map<String,Agent> agents) {
-        String challenger = getChallengers(board, move, agents);
-        if (!challenger.isEmpty()) {
-            //TODO: Resolve the challenge
-            return null;
-        } else {
-            // Not blocked
-            Player source = board.getPlayers().get(move.getSource());
-            int initialBoardSize = board.getCards().size();
-            List<Card> newCards = board.getExchangeCards();
-            List<Card> options = new ArrayList<>(newCards.size()+HAND_SIZE);
-            options.addAll(newCards);
-            options = source.getOptions(options);
-            Agent agent = agents.get(move.getSource());
-            List<Card> newHand = agent.selectHand(board, options);
-            options.removeAll(newHand);
-            board.returnExchangeCards(newCards); //TODO: Make an immutable version
-            source = source.setHand(newHand);
-            Board result = board.replacePlayer(source);
-            assert initialBoardSize == result.getCards().size() : String.format("Board size should not change (Previous %1$d; Actual %2$d)", initialBoardSize, result.getCards().size());
-            return result;
-        }
+        Player source = board.getPlayers().get(move.getSource());
+        int initialBoardSize = board.getCards().size();
+        List<Card> newCards = board.getExchangeCards();
+        List<Card> options = new ArrayList<>(newCards.size()+HAND_SIZE);
+        options.addAll(newCards);
+        options = source.getOptions(options);
+        Agent agent = agents.get(move.getSource());
+        List<Card> newHand = agent.selectHand(board, options);
+        options.removeAll(newHand);
+        board.returnExchangeCards(newCards); //TODO: Make an immutable version
+        source = source.setHand(newHand);
+        Board result = board.replacePlayer(source);
+        assert initialBoardSize == result.getCards().size() : String.format("Board size should not change (Previous %1$d; Actual %2$d)", initialBoardSize, result.getCards().size());
+        return result;
     }
 
     private Board processCoup(Board board, Move move, Map<String,Agent> agents) {
@@ -134,60 +123,24 @@ public class EngineImpl implements Engine {
     }
 
     private Board processSteal(Board board, Move move, Map<String, Agent> agents) {
-        String challenge = getChallengers(board, move, agents);
-        if (!challenge.isEmpty()) {
-            //TODO: Resolve Challenge
-        } else {
-            String blocker = getBlockers(board, move, agents);
-            if (!blocker.isEmpty()) {
-                Agent sourceAgent = agents.get(move.getSource());
-                if (sourceAgent.challengeBlock(blocker, board, move)) {
-                    //TODO: Resolve block challenge
-                } else {
-                    // Block successful - no change
-                    return board;
-                }
-            } else {
-                // Neither challenged nor blocked...
-                Player source = board.getPlayers().get(move.getSource());
-                Player target = board.getPlayers().get(move.getTarget());
-                int amount = Math.min(target.getCoins(), Constants.STEAL_AMOUNT);
-                source = source.setCoins(source.getCoins() + amount);
-                target = target.setCoins(target.getCoins() - amount);
-                board = board.replacePlayer(source);
-                return board.replacePlayer(target);
-            }
-        }
-        return null;
+        Player source = board.getPlayers().get(move.getSource());
+        Player target = board.getPlayers().get(move.getTarget());
+        int amount = Math.min(target.getCoins(), Constants.STEAL_AMOUNT);
+        source = source.setCoins(source.getCoins() + amount);
+        target = target.setCoins(target.getCoins() - amount);
+        board = board.replacePlayer(source);
+        return board.replacePlayer(target);
     }
 
     private Board processAssassinate(Board board, Move move, Map<String,Agent> agents) {
-        String challenger = getChallengers(board, move, agents);
-        if (!challenger.isEmpty()) {
-            //TODO: Resolve challenge
-        } else {
-            String blocker = getBlockers(board, move, agents);
-            if (!blocker.isEmpty()) {
-                Agent sourceAgent = agents.get(move.getSource());
-                if (sourceAgent.challengeBlock(blocker, board, move)) {
-                    //TODO: Resolve block challenge
-                } else {
-                    // Blocked - no change
-                    return board;
-                }
-            } else {
-                // Not challenged or blocked
-                Player source = board.getPlayers().get(move.getSource());
-                source = source.setCoins(source.getCoins() - Constants.ASSASSINATION_COIN_COST);
-                board = board.replacePlayer(source);
-                Agent targetAgent = agents.get(move.getTarget());
-                Player target = board.getPlayers().get(move.getTarget());
-                Card cardToLose = targetAgent.selectCardToSacrafice(board, target);
-                target = target.removeCardFromHand(cardToLose);
-                return board.replacePlayer(target);
-            }
-        }
-        return null;
+        Player source = board.getPlayers().get(move.getSource());
+        source = source.setCoins(source.getCoins() - Constants.ASSASSINATION_COIN_COST);
+        board = board.replacePlayer(source);
+        Agent targetAgent = agents.get(move.getTarget());
+        Player target = board.getPlayers().get(move.getTarget());
+        Card cardToLose = targetAgent.selectCardToSacrafice(board, target);
+        target = target.removeCardFromHand(cardToLose);
+        return board.replacePlayer(target);
     }
 
     private String getChallengers(Board board, Move move, Map<String, Agent> agents) {
