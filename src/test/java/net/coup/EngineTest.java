@@ -85,6 +85,33 @@ public class EngineTest {
     }
 
     @Test
+    public void when_exchangeMoveTaken_given_playerHasOnlyOnePrivateCard_then_playerStillHasOnlyOneCard() {
+        Board board = newBoard("Player1", "Player2");
+        Move tax = new Move("Player2", "Player2", Action.TAX);
+        Move assassinate = new Move("Player1", "Player1", Action.ASSASSINATE);
+        Move exchange = new Move("Player1", "Player1", Action.EXCHANGE);
+        Agent agent = Mockito.mock(Agent.class);
+        Map<String,Agent> agents = Collections.singletonMap("Player1", agent);
+        List<Card> hand = board.getPlayers().get("Player1").getOptions(new ArrayList<Card>(2));
+        Card sacrafice = hand.get(0);
+        Mockito.doReturn(sacrafice).when(agent).selectCardToSacrafice(any(Board.class), any(Player.class));
+        Mockito.doReturn(Collections.singletonList(Card.CAPTAIN)).when(agent).selectHand(any(Board.class), any(List.class));
+
+        Engine engine = new EngineImpl();
+
+        Board funded = engine.processTurn(board, tax, agents);
+        Board assassinated = engine.processTurn(funded, assassinate, agents);
+        int preExchangeCourtSize = assassinated.getCards().size();
+        Board exchanged = engine.processTurn(assassinated, exchange, agents);
+        int postExchangeCourtSize = exchanged.getCards().size();
+
+        assert preExchangeCourtSize == postExchangeCourtSize : String.format("Expected pre-exchange and post-exchange court size to match but (Pre: %1$d Post: %2$d)", preExchangeCourtSize, postExchangeCourtSize);
+        assert exchanged.getPlayers().get("Player1").getPublicCards().contains(sacrafice) : "Expect the sacraficed card to remain unchanged";
+        assert exchanged.getPlayers().get("Player1").getOptions(new ArrayList<Card>(2)).size() == 1 : String.format("Expected exchange to retain exactly one private card (actual : %1$d)", exchanged.getPlayers().get("Player1").getOptions(new ArrayList<Card>(2)).size());
+        Mockito.verify(agent).selectCardToSacrafice(any(Board.class), any(Player.class));
+    }
+
+    @Test
     public void when_assassinated_then_playerCardBecomePublic() {
         Board board = newBoard("Player1", "Player2");
         Move move1 = new Move("Player1", "Player2", Action.INCOME);
