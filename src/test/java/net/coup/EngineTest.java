@@ -35,6 +35,25 @@ public class EngineTest {
     }
 
     @Test
+    public void when_foreignAidMoveBlockedAndNotChallenged_then_noChange() {
+        Board board = Board.newGame(Arrays.asList("Player1", "Player2"));
+        Move move = new Move("Player1", "Player1", Action.FOREIGN_AID);
+        Agent agent1 = Mockito.mock(Agent.class);
+        Agent agent2 = Mockito.mock(Agent.class);
+        Map<String, Agent> agents = new HashMap<>();
+        agents.put("Player1", agent1);
+        agents.put("Player2", agent2);
+        Mockito.doReturn(false).when(agent1).challengeBlock("Player2", board, move);
+        Mockito.doReturn(true).when(agent2).blockMove(board, move);
+
+        Engine engine = new EngineImpl();
+        Board blocked = engine.processTurn(board, move, agents);
+
+        Mockito.verify(agent2).blockMove(board, move);
+        assert board == blocked : "Expected no change if move is blocked and block is not challenged";
+    }
+
+    @Test
     public void when_taxMoveTaken_then_playerCoinsIncrease() {
         Board board = Board.newGame(Collections.singletonList("Player1"));
         Move move = new Move("Player1", "Player1", Action.TAX);
