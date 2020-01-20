@@ -23,6 +23,14 @@ public class Move {
         return action;
     }
 
+    public boolean isChallengable() {
+        return action.getImplies() != null;
+    }
+
+    public boolean isBlockable() {
+        return action.getBlocks().size() > 0;
+    }
+
     @Override
     public String toString() {
         return String.format("%1$s performing %2$s on %3$s", source, action, target);

@@ -7,8 +7,8 @@ public enum Action {
     FOREIGN_AID(0, 2, null, Collections.singleton(Card.DUKE)),
     TAX(0, 3, Card.DUKE, Constants.EMPTY_CARD_SET),
     COUP(7, 0, null, Constants.EMPTY_CARD_SET),
-    STEAL(0, 2, Card.CAPTAIN, asSet()),
-    EXCHANGE(0, 0, Card.AMBASSADOR, asSet(Card.AMBASSADOR, Card.CAPTAIN)),
+    STEAL(0, 2, Card.CAPTAIN, asSet(Card.CAPTAIN, Card.AMBASSADOR)),
+    EXCHANGE(0, 0, Card.AMBASSADOR, asSet()),
     ASSASSINATE(3, 0, Card.ASSASSIN, Collections.singleton(Card.CONTESSA));
 
     private static Set<Card> asSet(Card... cards) {

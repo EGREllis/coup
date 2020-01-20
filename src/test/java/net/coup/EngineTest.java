@@ -10,6 +10,7 @@ import org.mockito.Mockito;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 public class EngineTest {
     @Test
@@ -177,6 +178,35 @@ public class EngineTest {
         Mockito.verify(agent2).selectCardToSacrafice(any(Board.class), any(Player.class));
         assert postCoup.getPlayers().get("Player2").getPublicCards().contains(sacrafice) : "Expected sacraficed card to become a public card for the target player";
         assert postCoup.getPlayers().get("Player2").getOptions(new ArrayList<Card>(2)).size() == 1 : String.format("Expected 1 card to be kept private, but actual private card count is %1$d", postCoup.getPlayers().get("Player2").getOptions(new ArrayList<Card>(2)).size());
+    }
+
+    @Test
+    public void when_stealBlockIsChallenged_given_blockLegit_then_challengerLosesACard() {
+        Board board = newBoard("Player1", "Player2");
+        Move exchange = new Move("Player1", "Player1", Action.EXCHANGE);
+        Move steal = new Move("Player1", "Player2", Action.STEAL);
+        Agent agent1 = Mockito.mock(Agent.class);
+        Agent agent2 = Mockito.mock(Agent.class);
+        Map<String, Agent> agents = new HashMap<>();
+        agents.put("Player1", agent1);
+        agents.put("Player2", agent2);
+
+        // Ensure Player 1 has a Captain card
+        Mockito.doReturn(Arrays.asList(Card.CAPTAIN, Card.CAPTAIN)).when(agent1).selectHand(any(Board.class), any(List.class));
+
+        Engine engine = new EngineImpl();
+        Board postExchange = engine.processTurn(board, exchange, agents);
+        Mockito.verify(agent1).selectHand(any(Board.class), any(List.class));
+
+        Mockito.doReturn(true).when(agent2).blockMove(postExchange, steal);
+        Mockito.doReturn(true).when(agent1).challengeBlock("Player2", postExchange, steal);
+        Board postSteal = engine.processTurn(postExchange, steal, agents);
+
+        Mockito.verify(agent2).blockMove(postExchange, steal);
+        Mockito.verify(agent1).challengeBlock(eq("Player2"), eq(postExchange), eq(steal));
+        assert postSteal.getPlayers().get("Player1").getCoins() == 4 : String.format("Expect steal to be processed give challenge was illegal :- expect player1 to have 4 coins, actual: %1$d", postSteal.getPlayers().get("Player1").getCoins());
+        assert postSteal.getPlayers().get("Player2").getPublicCards().size() == 1 : "Expect failed challenger to lose a card";
+        assert postSteal.getPlayers().get("Player1").getPublicCards().size() == 0 : "Expect legitimate challengee to be unpunished";
     }
 
     private Board newBoard(String ... names) {

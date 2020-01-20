@@ -34,20 +34,42 @@ public class EngineImpl implements Engine {
 
     @Override
     public Board processTurn(Board board, Move move, Map<String, Agent> agents) {
-        String challenger = getChallengers(board, move, agents);
-        if (challenger.length() > 0) {
-            //TODO: Resolve challenge
+        // Process politics
+        if (move.isChallengable()) {
+            String challenger = getChallengers(board, move, agents);
+            if (challenger.length() > 0) {
+                Player source = board.getPlayers().get(move.getSource());
+                List<Card> hand = source.getOptions(new ArrayList<Card>(2));
+                if (hand.contains(move.getAction().getImplies())) {
+                    board = loseCard(board, board.getPlayers().get(challenger), agents.get(challenger));
+                } else {
+                    board = loseCard(board, board.getPlayers().get(move.getSource()), agents.get(move.getSource()));
+                }
+            }
         }
-        if (move.getAction().getBlocks().size() > 0) {
+        if (move.isBlockable()) {
             String blocker = getBlockers(board, move, agents);
             if (blocker.length() > 0) {
                 if (challengeBlock(blocker, board, move, agents)) {
-                    //TODO: Resolve Block Challenge
+                    List<Card> hand = board.getPlayers().get(blocker).getOptions(new ArrayList<Card>(2));
+                    boolean validBlock = false;
+                    for (Card blockingCard : move.getAction().getBlocks()) {
+                        if (hand.contains(blockingCard)) {
+                            validBlock = true;
+                            break;
+                        }
+                    }
+                    if (validBlock) {
+                        board = loseCard(board, board.getPlayers().get(move.getSource()), agents.get(move.getSource()));
+                    } else {
+                        board = loseCard(board, board.getPlayers().get(blocker), agents.get(blocker));
+                    }
                 } else {
                     return board;
                 }
             }
         }
+        // Process move
         switch(move.getAction()) {
             case INCOME:
                 board = processIncome(board, move, agents);
@@ -117,9 +139,7 @@ public class EngineImpl implements Engine {
         board = board.replacePlayer(source);
         Player target = board.getPlayers().get(move.getTarget());
         Agent agent = agents.get(move.getTarget());
-        Card toLose = agent.selectCardToSacrafice(board, target);
-        target = target.removeCardFromHand(toLose);
-        return board.replacePlayer(target);
+        return loseCard(board, target, agent);
     }
 
     private Board processSteal(Board board, Move move, Map<String, Agent> agents) {
@@ -138,9 +158,7 @@ public class EngineImpl implements Engine {
         board = board.replacePlayer(source);
         Agent targetAgent = agents.get(move.getTarget());
         Player target = board.getPlayers().get(move.getTarget());
-        Card cardToLose = targetAgent.selectCardToSacrafice(board, target);
-        target = target.removeCardFromHand(cardToLose);
-        return board.replacePlayer(target);
+        return loseCard(board, target, targetAgent);
     }
 
     private String getChallengers(Board board, Move move, Map<String, Agent> agents) {
@@ -176,5 +194,11 @@ public class EngineImpl implements Engine {
     private boolean challengeBlock(String blocker, Board board, Move move, Map<String, Agent> agents) {
         Agent myself = agents.get(move.getSource());
         return myself.challengeBlock(blocker, board, move);
+    }
+
+    private Board loseCard(Board board, Player player, Agent agent) {
+        Card sacrafice = agent.selectCardToSacrafice(board, player);
+        Player replacement = player.removeCardFromHand(sacrafice);
+        return board.replacePlayer(replacement);
     }
 }
