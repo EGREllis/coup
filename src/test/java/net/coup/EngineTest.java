@@ -4,6 +4,7 @@ import net.coup.engine.Agent;
 import net.coup.engine.Engine;
 import net.coup.engine.EngineImpl;
 import net.coup.model.*;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -13,12 +14,22 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 public class EngineTest {
+    private Engine engine;
+    private Board board;
+    private Map<String,Agent> agents;
+
+    @Before
+    public void setup() {
+        engine = new EngineImpl();
+        board = newBoard("Player1", "Player2");
+        agents = new HashMap<>();
+        agents.put("Player1", Mockito.mock(Agent.class));
+        agents.put("Player2", Mockito.mock(Agent.class));
+    }
+
     @Test
     public void when_incomeMoveTaken_then_playerCoinsIncrease() {
-        Board board = Board.newGame(Collections.singletonList("Player1"));
         Move move = new Move("Player1", "Player1", Action.INCOME);
-
-        Engine engine = new EngineImpl();
 
         Board result = engine.processTurn(board, move, Collections.EMPTY_MAP);
         assert result.getPlayers().get("Player1").getCoins() == board.getPlayers().get("Player1").getCoins() + 1 : String.format("Expected %1$d coins after income but got %2$d", 1, result.getPlayers().get("Player1").getCoins());
@@ -26,10 +37,7 @@ public class EngineTest {
 
     @Test
     public void when_foreignAidMoveTaken_then_playerCoinsIncrease() {
-        Board board = Board.newGame(Collections.singletonList("Player1"));
         Move move = new Move("Player1", "Player1", Action.FOREIGN_AID);
-
-        Engine engine = new EngineImpl();
 
         Board result = engine.processTurn(board, move, Collections.EMPTY_MAP);
         assert result.getPlayers().get("Player1").getCoins() == board.getPlayers().get("Player1").getCoins() + 2 : String.format("Expected %1$d coins after income but got %2$d", 2, result.getPlayers().get("Player1").getCoins());
@@ -37,17 +45,12 @@ public class EngineTest {
 
     @Test
     public void when_foreignAidMoveBlockedAndNotChallenged_then_noChange() {
-        Board board = Board.newGame(Arrays.asList("Player1", "Player2"));
         Move move = new Move("Player1", "Player1", Action.FOREIGN_AID);
-        Agent agent1 = Mockito.mock(Agent.class);
-        Agent agent2 = Mockito.mock(Agent.class);
-        Map<String, Agent> agents = new HashMap<>();
-        agents.put("Player1", agent1);
-        agents.put("Player2", agent2);
+        Agent agent1 = agents.get("Player1");
+        Agent agent2 = agents.get("Player2");
         Mockito.doReturn(false).when(agent1).challengeBlock("Player2", board, move);
         Mockito.doReturn(true).when(agent2).blockMove(board, move);
 
-        Engine engine = new EngineImpl();
         Board blocked = engine.processTurn(board, move, agents);
 
         Mockito.verify(agent2).blockMove(board, move);
@@ -56,10 +59,7 @@ public class EngineTest {
 
     @Test
     public void when_taxMoveTaken_then_playerCoinsIncrease() {
-        Board board = Board.newGame(Collections.singletonList("Player1"));
         Move move = new Move("Player1", "Player1", Action.TAX);
-
-        Engine engine = new EngineImpl();
 
         Board result = engine.processTurn(board, move, Collections.EMPTY_MAP);
         assert result.getPlayers().get("Player1").getCoins() == board.getPlayers().get("Player1").getCoins() + 3 : String.format("Expected %1$d coins after income but got %2$d", 3, result.getPlayers().get("Player1").getCoins());
@@ -67,17 +67,11 @@ public class EngineTest {
 
     @Test
     public void when_stealMoveTaken_then_playerCoinsInceaseAndTargetsDecrease() {
-        Board board = newBoard("Player1", "Player2");
         Move move1 = new Move("Player1", "Player1", Action.TAX);
-
-        Engine engine = new EngineImpl();
-
         Board result = engine.processTurn(board, move1, Collections.EMPTY_MAP);
-
         assert result.getPlayers().get("Player1").getCoins() == 5 : "Expected 5 coins after successful tax (start with 2)";
 
         Move move2 = new Move("Player2", "Player1", Action.STEAL);
-
         result = engine.processTurn(result, move2, Collections.EMPTY_MAP);
 
         assert result.getPlayers().get("Player1").getCoins() == 3 : "Expected 3 coin after tax and steal";
@@ -86,10 +80,8 @@ public class EngineTest {
 
     @Test
     public void when_exchangeMoveTaken_then_playerCardsChange() {
-        Board board = newBoard("Player1");
         Move move = new Move("Player1", "Player1", Action.EXCHANGE);
-        Engine engine = new EngineImpl();
-        Agent agent = Mockito.mock(Agent.class);
+        Agent agent = agents.get("Player1");
         List<Card> nextHand = Arrays.asList(Card.ASSASSIN, Card.CAPTAIN);
         int initialBoardSize = board.getCards().size();
 
@@ -106,18 +98,14 @@ public class EngineTest {
 
     @Test
     public void when_exchangeMoveTaken_given_playerHasOnlyOnePrivateCard_then_playerStillHasOnlyOneCard() {
-        Board board = newBoard("Player1", "Player2");
         Move tax = new Move("Player2", "Player2", Action.TAX);
         Move assassinate = new Move("Player1", "Player1", Action.ASSASSINATE);
         Move exchange = new Move("Player1", "Player1", Action.EXCHANGE);
-        Agent agent = Mockito.mock(Agent.class);
-        Map<String,Agent> agents = Collections.singletonMap("Player1", agent);
+        Agent agent = agents.get("Player1");
         List<Card> hand = board.getPlayers().get("Player1").getOptions(new ArrayList<Card>(2));
         Card sacrafice = hand.get(0);
         Mockito.doReturn(sacrafice).when(agent).selectCardToSacrafice(any(Board.class), any(Player.class));
         Mockito.doReturn(Collections.singletonList(Card.CAPTAIN)).when(agent).selectHand(any(Board.class), any(List.class));
-
-        Engine engine = new EngineImpl();
 
         Board funded = engine.processTurn(board, tax, agents);
         Board assassinated = engine.processTurn(funded, assassinate, agents);
@@ -133,13 +121,9 @@ public class EngineTest {
 
     @Test
     public void when_assassinated_then_playerCardBecomePublic() {
-        Board board = newBoard("Player1", "Player2");
         Move move1 = new Move("Player1", "Player2", Action.INCOME);
         Move move2 = new Move("Player1", "Player2", Action.ASSASSINATE);
-        Agent agent2 = Mockito.mock(Agent.class);
-        Map<String, Agent> agents = new HashMap<>();
-        agents.put("Player2", agent2);
-        Engine engine = new EngineImpl();
+        Agent agent2 = agents.get("Player2");
 
         List<Card> targetsHand = board.getPlayers().get("Player2").getOptions(new ArrayList<Card>(2));
         Card sacrafice = targetsHand.get(0);
@@ -159,17 +143,14 @@ public class EngineTest {
 
     @Test
     public void when_coup_then_playerCardBecomesPublic() {
-        Board board = newBoard("Player1", "Player2");
         Move taxMove = new Move("Player1", "Player1", Action.TAX);
         Move coupMove = new Move("Player1", "Player2", Action.COUP);
-        Agent agent2 = Mockito.mock(Agent.class);
-        Map<String, Agent> agents = Collections.singletonMap("Player2", agent2);
+        Agent agent2 = agents.get("Player2");
 
         List<Card> hand = board.getPlayers().get("Player2").getOptions(new ArrayList<Card>(2));
         Card sacrafice = hand.get(0);
         Mockito.doReturn(sacrafice).when(agent2).selectCardToSacrafice(any(Board.class), any(Player.class));
 
-        Engine engine = new EngineImpl();
         Board postTax1 = engine.processTurn(board, taxMove, agents);
         Board postTax2 = engine.processTurn(postTax1, taxMove, agents);
         Board postCoup = engine.processTurn(postTax2, coupMove, agents);
@@ -182,17 +163,11 @@ public class EngineTest {
 
     @Test
     public void when_stealBlockIsChallenged_given_blockLegit_then_challengerLosesACard() {
-        Board board = newBoard("Player1", "Player2");
         Move exchange1 = new Move("Player1", "Player1", Action.EXCHANGE);
         Move exchange2 = new Move("Player2", "Player2", Action.EXCHANGE);
         Move steal = new Move("Player1", "Player2", Action.STEAL);
-        Agent agent1 = Mockito.mock(Agent.class);
-        Agent agent2 = Mockito.mock(Agent.class);
-        Map<String, Agent> agents = new HashMap<>();
-        agents.put("Player1", agent1);
-        agents.put("Player2", agent2);
-
-        Engine engine = new EngineImpl();
+        Agent agent1 = agents.get("Player1");
+        Agent agent2 = agents.get("Player2");
 
         // Ensure Player 1 has a Captain card
         Mockito.doReturn(Arrays.asList(Card.CAPTAIN, Card.CAPTAIN)).when(agent1).selectHand(any(Board.class), any(List.class));
@@ -223,17 +198,11 @@ public class EngineTest {
 
     @Test
     public void when_stealBlockIsChallenged_given_blockIllegitimate_then_challengerLosesACard() {
-        Board board = newBoard("Player1", "Player2");
         Move exchange1 = new Move("Player1", "Player1", Action.EXCHANGE);
         Move exchange2 = new Move("Player2", "Player2", Action.EXCHANGE);
         Move steal = new Move("Player1", "Player2", Action.STEAL);
-        Agent agent1 = Mockito.mock(Agent.class);
-        Agent agent2 = Mockito.mock(Agent.class);
-        Map<String, Agent> agents = new HashMap<>();
-        agents.put("Player1", agent1);
-        agents.put("Player2", agent2);
-
-        Engine engine = new EngineImpl();
+        Agent agent1 = agents.get("Player1");
+        Agent agent2 = agents.get("Player2");
 
         // Ensure Player 1 does not have Captain card
         Mockito.doReturn(Arrays.asList(Card.ASSASSIN, Card.ASSASSIN)).when(agent1).selectHand(any(Board.class), any(List.class));
