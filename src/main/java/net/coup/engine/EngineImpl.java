@@ -61,6 +61,7 @@ public class EngineImpl implements Engine {
                     }
                     if (validBlock) {
                         board = loseCard(board, board.getPlayers().get(move.getSource()), agents.get(move.getSource()));
+                        return board;
                     } else {
                         board = loseCard(board, board.getPlayers().get(blocker), agents.get(blocker));
                     }

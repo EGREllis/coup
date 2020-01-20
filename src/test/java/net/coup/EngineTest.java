@@ -183,7 +183,8 @@ public class EngineTest {
     @Test
     public void when_stealBlockIsChallenged_given_blockLegit_then_challengerLosesACard() {
         Board board = newBoard("Player1", "Player2");
-        Move exchange = new Move("Player1", "Player1", Action.EXCHANGE);
+        Move exchange1 = new Move("Player1", "Player1", Action.EXCHANGE);
+        Move exchange2 = new Move("Player2", "Player2", Action.EXCHANGE);
         Move steal = new Move("Player1", "Player2", Action.STEAL);
         Agent agent1 = Mockito.mock(Agent.class);
         Agent agent2 = Mockito.mock(Agent.class);
@@ -191,22 +192,75 @@ public class EngineTest {
         agents.put("Player1", agent1);
         agents.put("Player2", agent2);
 
+        Engine engine = new EngineImpl();
+
         // Ensure Player 1 has a Captain card
         Mockito.doReturn(Arrays.asList(Card.CAPTAIN, Card.CAPTAIN)).when(agent1).selectHand(any(Board.class), any(List.class));
+        Board postExchange1 = engine.processTurn(board, exchange1, agents);
+        Mockito.verify(agent1).selectHand(any(Board.class), any(List.class));
+        List<Card> player1Hand = postExchange1.getPlayers().get("Player1").getOptions(new ArrayList<Card>());
+        assert player1Hand.equals(Arrays.asList(Card.CAPTAIN, Card.CAPTAIN)) : String.format("Pre-condition: Player 1's hand has not been correctly rigged (%1$s)", player1Hand);
+
+        // Ensure Player 2 has a Captain card
+        Mockito.doReturn(Arrays.asList(Card.CAPTAIN, Card.ASSASSIN)).when(agent2).selectHand(any(Board.class), any(List.class));
+        Board postExchange2 = engine.processTurn(postExchange1, exchange2, agents);
+        Mockito.verify(agent2).selectHand(any(Board.class), any(List.class));
+        List<Card> player2Hand = postExchange2.getPlayers().get("Player2").getOptions(new ArrayList<Card>());
+        assert player2Hand.equals(Arrays.asList(Card.CAPTAIN, Card.ASSASSIN)) : String.format("Pre-condition: Player 2's hand has been incorrectly rigged (%1$s)", player2Hand);
+
+        // Process the steal move, which Player 2 will block and Player 1 will challenge
+        Mockito.doReturn(true).when(agent2).blockMove(postExchange2, steal);
+        Mockito.doReturn(true).when(agent1).challengeBlock("Player2", postExchange2, steal);
+        Mockito.doReturn(Card.CAPTAIN).when(agent1).selectCardToSacrafice(any(Board.class), any(Player.class));
+        Board postSteal = engine.processTurn(postExchange2, steal, agents);
+
+        Mockito.verify(agent2).blockMove(postExchange2, steal);
+        Mockito.verify(agent1).challengeBlock(eq("Player2"), eq(postExchange2), eq(steal));
+        assert postSteal.getPlayers().get("Player1").getCoins() == 2 : String.format("Expect steal to be processed give challenge was illegal :- expect player1 to have 2 coins, actual: %1$d", postSteal.getPlayers().get("Player1").getCoins());
+        assert postSteal.getPlayers().get("Player1").getPublicCards().size() == 1 : String.format("Expect failed challenger to lose a card (actual %1$d)", postSteal.getPlayers().get("Player2").getPublicCards().size());
+        assert postSteal.getPlayers().get("Player2").getPublicCards().size() == 0 : "Expect legitimate challengee to be unpunished";
+    }
+
+    @Test
+    public void when_stealBlockIsChallenged_given_blockIllegitimate_then_challengerLosesACard() {
+        Board board = newBoard("Player1", "Player2");
+        Move exchange1 = new Move("Player1", "Player1", Action.EXCHANGE);
+        Move exchange2 = new Move("Player2", "Player2", Action.EXCHANGE);
+        Move steal = new Move("Player1", "Player2", Action.STEAL);
+        Agent agent1 = Mockito.mock(Agent.class);
+        Agent agent2 = Mockito.mock(Agent.class);
+        Map<String, Agent> agents = new HashMap<>();
+        agents.put("Player1", agent1);
+        agents.put("Player2", agent2);
 
         Engine engine = new EngineImpl();
-        Board postExchange = engine.processTurn(board, exchange, agents);
+
+        // Ensure Player 1 does not have Captain card
+        Mockito.doReturn(Arrays.asList(Card.ASSASSIN, Card.ASSASSIN)).when(agent1).selectHand(any(Board.class), any(List.class));
+        Board postExchange1 = engine.processTurn(board, exchange1, agents);
         Mockito.verify(agent1).selectHand(any(Board.class), any(List.class));
+        List<Card> player1Hand = postExchange1.getPlayers().get("Player1").getOptions(new ArrayList<Card>());
+        assert player1Hand.equals(Arrays.asList(Card.ASSASSIN, Card.ASSASSIN)) : String.format("Pre-condition: Player 1's hand has not been correctly rigged (%1$s)", player1Hand);
 
-        Mockito.doReturn(true).when(agent2).blockMove(postExchange, steal);
-        Mockito.doReturn(true).when(agent1).challengeBlock("Player2", postExchange, steal);
-        Board postSteal = engine.processTurn(postExchange, steal, agents);
+        // Ensure Player 2 does not have a Captain card
+        Mockito.doReturn(Arrays.asList(Card.ASSASSIN, Card.ASSASSIN)).when(agent2).selectHand(any(Board.class), any(List.class));
+        Board postExchange2 = engine.processTurn(postExchange1, exchange2, agents);
+        Mockito.verify(agent2).selectHand(any(Board.class), any(List.class));
+        List<Card> player2Hand = postExchange2.getPlayers().get("Player2").getOptions(new ArrayList<Card>());
+        assert player2Hand.equals(Arrays.asList(Card.ASSASSIN, Card.ASSASSIN)) : String.format("Pre-condition: Player 2's hand has been incorrectly rigged (%1$s)", player2Hand);
 
-        Mockito.verify(agent2).blockMove(postExchange, steal);
-        Mockito.verify(agent1).challengeBlock(eq("Player2"), eq(postExchange), eq(steal));
+        // Process the steal move, which Player 2 will block and Player 1 will challenge
+        Mockito.doReturn(true).when(agent2).blockMove(postExchange2, steal);
+        Mockito.doReturn(true).when(agent1).challengeBlock("Player2", postExchange2, steal);
+        Mockito.doReturn(Card.ASSASSIN).when(agent2).selectCardToSacrafice(any(Board.class), any(Player.class));
+        Mockito.doReturn(Card.CAPTAIN).when(agent2).selectCardToSacrafice(any(Board.class), any(Player.class));
+        Board postSteal = engine.processTurn(postExchange2, steal, agents);
+
+        Mockito.verify(agent2).blockMove(postExchange2, steal);
+        Mockito.verify(agent1).challengeBlock(eq("Player2"), eq(postExchange2), eq(steal));
         assert postSteal.getPlayers().get("Player1").getCoins() == 4 : String.format("Expect steal to be processed give challenge was illegal :- expect player1 to have 4 coins, actual: %1$d", postSteal.getPlayers().get("Player1").getCoins());
-        assert postSteal.getPlayers().get("Player2").getPublicCards().size() == 1 : "Expect failed challenger to lose a card";
-        assert postSteal.getPlayers().get("Player1").getPublicCards().size() == 0 : "Expect legitimate challengee to be unpunished";
+        assert postSteal.getPlayers().get("Player1").getPublicCards().size() == 0 : String.format("Expect failed challenger to lose a card (actual %1$d)", postSteal.getPlayers().get("Player2").getPublicCards().size());;
+        assert postSteal.getPlayers().get("Player2").getPublicCards().size() == 1 : String.format("Expect illegitimate challengee to be punished (actual %1$d)", postSteal.getPlayers().get("Player1").getPublicCards().size());
     }
 
     private Board newBoard(String ... names) {
