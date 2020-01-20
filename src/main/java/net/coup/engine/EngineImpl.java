@@ -44,6 +44,7 @@ public class EngineImpl implements Engine {
                     board = loseCard(board, board.getPlayers().get(challenger), agents.get(challenger));
                 } else {
                     board = loseCard(board, board.getPlayers().get(move.getSource()), agents.get(move.getSource()));
+                    return board;
                 }
             }
         }
