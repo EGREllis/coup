@@ -1,5 +1,6 @@
-package net.coup.engine;
+package net.coup.agents;
 
+import net.coup.engine.Agent;
 import net.coup.model.*;
 
 import java.util.ArrayList;
@@ -7,7 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class RandomAgent implements Agent {
+public class RandomLegalAgent implements Agent {
     @Override
     public Card selectCardToSacrafice(Board board, Player player) {
         List<Card> cards = new ArrayList<>();
@@ -22,21 +23,29 @@ public class RandomAgent implements Agent {
 
     @Override
     public boolean challengeMove(Board board, Move move) {
-        return false;
+        return Math.random() > 0.5;
     }
 
     @Override
     public boolean challengeBlock(String blocker, Board board, Move move) {
-        return false;
+        return Math.random() > 0.5;
     }
 
     @Override
-    public boolean blockMove(Board board, Move move) {
-        return false;
+    public boolean blockMove(Board board, Move move, Player player) {
+        boolean isValidBlock = false;
+        List<Card> hand = player.getOptions(new ArrayList<Card>());
+        for (Card block : move.getAction().getBlocks()) {
+            if (hand.contains(block)) {
+                isValidBlock = true;
+                break;
+            }
+        }
+        return isValidBlock;
     }
 
     @Override
-    public List<Card> selectHand(Board board, List<Card> options) {
+    public List<Card> selectHand(Board board, List<Card> options, int cards) {
         Set<Integer> indices = new HashSet<>();
         while (indices.size() < Constants.HAND_SIZE) {
             int index = (int)(Math.random() * options.size());

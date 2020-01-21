@@ -126,7 +126,11 @@ public class EngineImpl implements Engine {
         options.addAll(newCards);
         options = source.getOptions(options);
         Agent agent = agents.get(move.getSource());
-        List<Card> newHand = agent.selectHand(board, options);
+        int nCards = Constants.HAND_SIZE - source.getPublicCards().size();
+        List<Card> newHand = agent.selectHand(board, options, nCards);
+        if (newHand.size() > nCards) {
+            throw new IllegalStateException("More cards have been selected than the agent is entitled too!");
+        }
         options.removeAll(newHand);
         board.returnExchangeCards(newCards); //TODO: Make an immutable version
         source = source.setHand(newHand);
@@ -186,7 +190,7 @@ public class EngineImpl implements Engine {
                 continue;
             }
             Agent agent = entry.getValue();
-            if (agent.blockMove(board, move)) {
+            if (agent.blockMove(board, move, board.getPlayers().get(entry.getKey()))) {
                 return entry.getKey();
             }
         }

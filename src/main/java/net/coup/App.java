@@ -3,18 +3,14 @@ package net.coup;
 import net.coup.engine.Agent;
 import net.coup.engine.Engine;
 import net.coup.engine.EngineImpl;
-import net.coup.engine.RandomAgent;
+import net.coup.agents.RandomAgent;
 import net.coup.model.*;
 
 import java.util.*;
 
-/**
- * Hello world!
- *
- */
 public class App {
     public static void main( String[] args ) {
-        List<String> names = Arrays.asList("One", "Two", "Three", "Four", "Five");
+        List<String> names = Arrays.asList("Random", "RandomLegal");
         Map<String,Agent> agents = new HashMap<>();
         for (String name : names) {
             agents.put(name, new RandomAgent());

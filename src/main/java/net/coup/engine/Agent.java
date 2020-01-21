@@ -11,7 +11,7 @@ public interface Agent {
     Card selectCardToSacrafice(Board board, Player player);
     boolean challengeMove(Board board, Move move);
     boolean challengeBlock(String blocker, Board board, Move move);
-    boolean blockMove(Board board, Move move);
-    List<Card> selectHand(Board board, List<Card> options);
+    boolean blockMove(Board board, Move move, Player player);
+    List<Card> selectHand(Board board, List<Card> options, int cards);
     Move selectMove(List<Move> validMoves, Board board, Player player);
 }
