@@ -13,12 +13,13 @@ public class RandomAgent implements Agent {
     public Card selectCardToSacrafice(Board board, Player player) {
         List<Card> cards = new ArrayList<>();
         cards = player.getOptions(cards);
-        int index = cards.size();
-        while (index >= cards.size()) {
-            index = (int) (Math.random() * (cards.size()));
+        if (cards.size() == 1) {
+            return cards.get(0);
+        } else if (cards.size() == 2) {
+            return cards.get((int)Math.round(Math.random() * 1));
+        } else {
+            throw new IllegalStateException(String.format("This should never be called! %1$s", player));
         }
-        Card cardToRemove = cards.get(index);
-        return cardToRemove;
     }
 
     @Override

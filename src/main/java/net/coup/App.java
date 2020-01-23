@@ -1,7 +1,7 @@
 package net.coup;
 
 import net.coup.agents.RandomLegalAgent;
-import net.coup.agents.RandomRationalLegalAgent;
+import net.coup.agents.RationalLegalAgent;
 import net.coup.engine.Agent;
 import net.coup.agents.RandomAgent;
 import net.coup.model.*;
@@ -15,13 +15,14 @@ public class App {
         Map<String,Agent> agents = new HashMap<>();
         agents.put("Random", new RandomAgent());
         agents.put("RandomLegalAgent", new RandomLegalAgent());
-        agents.put("RandomRationalLegalAgent", new RandomRationalLegalAgent(values));
+        agents.put("RationalLegalAgent", new RationalLegalAgent(values));
         List<String> names = new ArrayList<>();
         names.addAll(agents.keySet());
         Board board = Board.newGame(names);
 
         Map<String,Integer> tally = new HashMap<>();
-        for (int i = 0; i < 1; i++) {
+        int max = 1000000;
+        for (int i = 0; i < max; i++) {
             Game game = new Game(board, agents);
             Board result;
             try {
@@ -38,6 +39,9 @@ public class App {
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
+            }
+            if (i % 10000 == 0) {
+                System.out.println(String.format("Finished game %1$d of %2$d", i, max));
             }
         }
         System.out.println("Agent:\tWinnings");

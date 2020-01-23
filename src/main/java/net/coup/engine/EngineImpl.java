@@ -41,9 +41,9 @@ public class EngineImpl implements Engine {
                 Player source = board.getPlayers().get(move.getSource());
                 List<Card> hand = source.getOptions(new ArrayList<Card>(2));
                 if (hand.contains(move.getAction().getImplies())) {
-                    board = loseCard(board, board.getPlayers().get(challenger), agents.get(challenger));
+                    board = loseCard(board, board.getPlayers().get(challenger), agents.get(challenger), String.format("Legitimate challenge of %1$s", move));
                 } else {
-                    board = loseCard(board, board.getPlayers().get(move.getSource()), agents.get(move.getSource()));
+                    board = loseCard(board, board.getPlayers().get(move.getSource()), agents.get(move.getSource()), String.format("Illegitimate challenge of %1$s", move));
                     return board;
                 }
             }
@@ -61,10 +61,10 @@ public class EngineImpl implements Engine {
                         }
                     }
                     if (validBlock) {
-                        board = loseCard(board, board.getPlayers().get(move.getSource()), agents.get(move.getSource()));
+                        board = loseCard(board, board.getPlayers().get(move.getSource()), agents.get(move.getSource()), String.format("Legitimate block challenge of %1$s", move));
                         return board;
                     } else {
-                        board = loseCard(board, board.getPlayers().get(blocker), agents.get(blocker));
+                        board = loseCard(board, board.getPlayers().get(blocker), agents.get(blocker), String.format("Illegitimate block challenge of %1$s", move));
                     }
                 } else {
                     return board;
@@ -145,7 +145,7 @@ public class EngineImpl implements Engine {
         board = board.replacePlayer(source);
         Player target = board.getPlayers().get(move.getTarget());
         Agent agent = agents.get(move.getTarget());
-        return loseCard(board, target, agent);
+        return loseCard(board, target, agent, move.toString());
     }
 
     private Board processSteal(Board board, Move move, Map<String, Agent> agents) {
@@ -164,7 +164,7 @@ public class EngineImpl implements Engine {
         board = board.replacePlayer(source);
         Agent targetAgent = agents.get(move.getTarget());
         Player target = board.getPlayers().get(move.getTarget());
-        return loseCard(board, target, targetAgent);
+        return loseCard(board, target, targetAgent, move.toString());
     }
 
     private String getChallengers(Board board, Move move, Map<String, Agent> agents) {
@@ -204,9 +204,14 @@ public class EngineImpl implements Engine {
         return myself.challengeBlock(blocker, board, move);
     }
 
-    private Board loseCard(Board board, Player player, Agent agent) {
+    private Board loseCard(Board board, Player player, Agent agent, String cause) {
+        if (!player.isAlive()) {
+            // Player is already dead (perhaps challenged an assassin when holding only one card?
+            return board;
+        }
         Card sacrafice = agent.selectCardToSacrafice(board, player);
         Player replacement = player.removeCardFromHand(sacrafice);
+        //System.out.println(String.format("%1$s lost a card (%3$s) to %2$s", player.getName(), cause, sacrafice));
         return board.replacePlayer(replacement);
     }
 }

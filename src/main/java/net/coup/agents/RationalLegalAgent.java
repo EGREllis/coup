@@ -5,10 +5,10 @@ import net.coup.model.*;
 
 import java.util.*;
 
-public class RandomRationalLegalAgent implements Agent {
+public class RationalLegalAgent implements Agent {
     private final List<Card> values;
 
-    public RandomRationalLegalAgent(List<Card> values) {
+    public RationalLegalAgent(List<Card> values) {
         this.values = values;
     }
 
@@ -32,7 +32,7 @@ public class RandomRationalLegalAgent implements Agent {
 
     @Override
     public boolean challengeMove(Board board, Move move, Player player) {
-        return Math.random() > 0.5 && player.isAlive();
+        return false;
     }
 
     @Override

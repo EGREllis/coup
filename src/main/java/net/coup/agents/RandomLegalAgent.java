@@ -15,13 +15,11 @@ public class RandomLegalAgent implements Agent {
         cards = player.getOptions(cards);
         if (cards.size() == 1) {
             return cards.get(0);
+        } else if (cards.size() == 2) {
+            return cards.get((int)Math.round(Math.random() * 1));
+        } else {
+            throw new IllegalStateException(String.format("This should never be called! %1$s", player));
         }
-        int index = cards.size();
-        while (index >= cards.size()) {
-            index = (int) (Math.random() * (cards.size()));
-        }
-        Card cardToRemove = cards.get(index);
-        return cardToRemove;
     }
 
     @Override

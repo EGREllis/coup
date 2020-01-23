@@ -23,14 +23,13 @@ public class Game implements Callable<Board> {
             for (String name : board.getPlayers().keySet()) {
                 Player player = board.getPlayers().get(name);
                 if (!player.isAlive()) {
-                    // This player is dead
+                    // Dead players take no actions...
                     continue;
                 }
                 Set<Action> allActions = getAllActions(player);
                 List<Move> moves = getMoves(allActions, board, player);
                 Agent myAgent = agents.get(name);
                 Move move = myAgent.selectMove(moves, board, player);
-                System.out.println(move);
                 board = engine.processTurn(board, move, agents);
             }
         }
@@ -61,7 +60,7 @@ public class Game implements Callable<Board> {
                     moves.add(new Move(player.getName(), player.getName(), action));
                     break;
                 case STEAL:
-                    others = board.getOtherPlayers(player.getName());
+                    others = board.getLiveOpponentsOf(player.getName());
                     for (Player other : others) {
                         if (other.getCoins() > 0) {
                             moves.add(new Move(player.getName(), other.getName(), action));
@@ -73,9 +72,9 @@ public class Game implements Callable<Board> {
                     if (player.getCoins() < action.getCost()) {
                         break;
                     }
-                    others = board.getOtherPlayers(player.getName());
+                    others = board.getLiveOpponentsOf(player.getName());
                     for (Player other : others) {
-                        if (other.getPublicCards().size() < Constants.HAND_SIZE) {
+                        if (other.isAlive()) {
                             moves.add(new Move(player.getName(), other.getName(), action));
                         }
                     }
