@@ -13,6 +13,9 @@ public class RandomLegalAgent implements Agent {
     public Card selectCardToSacrafice(Board board, Player player) {
         List<Card> cards = new ArrayList<>();
         cards = player.getOptions(cards);
+        if (cards.size() == 1) {
+            return cards.get(0);
+        }
         int index = cards.size();
         while (index >= cards.size()) {
             index = (int) (Math.random() * (cards.size()));
@@ -22,8 +25,8 @@ public class RandomLegalAgent implements Agent {
     }
 
     @Override
-    public boolean challengeMove(Board board, Move move) {
-        return Math.random() > 0.5;
+    public boolean challengeMove(Board board, Move move, Player player) {
+        return Math.random() > 0.5 && player.isAlive();
     }
 
     @Override
@@ -47,7 +50,7 @@ public class RandomLegalAgent implements Agent {
     @Override
     public List<Card> selectHand(Board board, List<Card> options, int cards) {
         Set<Integer> indices = new HashSet<>();
-        while (indices.size() < Constants.HAND_SIZE) {
+        while (indices.size() < cards) {
             int index = (int)(Math.random() * options.size());
             indices.add(index);
         }

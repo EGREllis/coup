@@ -175,7 +175,8 @@ public class EngineImpl implements Engine {
                 continue;
             }
             Agent agent = entry.getValue();
-            if (agent.challengeMove(board, move)) {
+            Player player = board.getPlayers().get(entry.getKey());
+            if (player.isAlive() && agent.challengeMove(board, move, player)) {
                 return entry.getKey();
             }
         }
@@ -190,7 +191,8 @@ public class EngineImpl implements Engine {
                 continue;
             }
             Agent agent = entry.getValue();
-            if (agent.blockMove(board, move, board.getPlayers().get(entry.getKey()))) {
+            Player player = board.getPlayers().get(entry.getKey());
+            if (player.isAlive() && agent.blockMove(board, move, player)) {
                 return entry.getKey();
             }
         }

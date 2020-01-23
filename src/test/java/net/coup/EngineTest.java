@@ -246,9 +246,9 @@ public class EngineTest {
         Mockito.verify(agent1).selectHand(any(Board.class), any(List.class), anyInt());
 
         // Player 1 propose tax (bluffing) Player 2 challenge
-        Mockito.doReturn(true).when(agent2).challengeMove(postExchange, tax);
+        Mockito.doReturn(true).when(agent2).challengeMove(postExchange, tax, postExchange.getPlayers().get("Player2"));
         Board postTax = engine.processTurn(postExchange, tax, agents);
-        Mockito.verify(agent2).challengeMove(postExchange, tax);
+        Mockito.verify(agent2).challengeMove(postExchange, tax, postExchange.getPlayers().get("Player2"));
 
         assert postTax.getPlayers().get("Player1").getPublicCards().size() == 1 : "Expect Player1 to be punished for illegal tax";
         assert postTax.getPlayers().get("Player2").getPublicCards().size() == 0 : "Expect Player2 to be unpunished to legal challenge";
@@ -268,9 +268,9 @@ public class EngineTest {
         Mockito.verify(agent1).selectHand(any(Board.class), any(List.class), anyInt());
 
         // Player 1 propose tax (bluffing) Player 2 challenge
-        Mockito.doReturn(true).when(agent2).challengeMove(postExchange, tax);
+        Mockito.doReturn(true).when(agent2).challengeMove(postExchange, tax, postExchange.getPlayers().get("Player2"));
         Board postTax = engine.processTurn(postExchange, tax, agents);
-        Mockito.verify(agent2).challengeMove(postExchange, tax);
+        Mockito.verify(agent2).challengeMove(postExchange, tax, postExchange.getPlayers().get("Player2"));
 
         assert postTax.getPlayers().get("Player1").getPublicCards().size() == 0 : "Expect Player1 to be punished for illegal tax";
         assert postTax.getPlayers().get("Player2").getPublicCards().size() == 1 : "Expect Player2 to be unpunished to legal challenge";

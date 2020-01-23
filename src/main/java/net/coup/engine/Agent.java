@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface Agent {
     Card selectCardToSacrafice(Board board, Player player);
-    boolean challengeMove(Board board, Move move);
+    boolean challengeMove(Board board, Move move, Player player);
     boolean challengeBlock(String blocker, Board board, Move move);
     boolean blockMove(Board board, Move move, Player player);
     List<Card> selectHand(Board board, List<Card> options, int cards);

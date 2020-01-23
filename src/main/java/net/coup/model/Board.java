@@ -86,10 +86,10 @@ public class Board {
         return deadPlayers >= players.size() - 1;
     }
 
-    public List<Player> getOtherPlayers(Player player) {
+    public List<Player> getOtherPlayers(String name) {
         List<Player> others = new ArrayList<>();
         for (Map.Entry<String,Player> entry : players.entrySet()) {
-            if (entry.getKey().equals(player.getName())) {
+            if (entry.getKey().equals(name)) {
                 continue;
             }
             others.add(entry.getValue());

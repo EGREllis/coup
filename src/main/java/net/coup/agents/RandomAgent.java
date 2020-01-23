@@ -22,8 +22,8 @@ public class RandomAgent implements Agent {
     }
 
     @Override
-    public boolean challengeMove(Board board, Move move) {
-        return false;
+    public boolean challengeMove(Board board, Move move, Player player) {
+        return Math.random() > 0.5 && player.isAlive();
     }
 
     @Override
@@ -39,7 +39,7 @@ public class RandomAgent implements Agent {
     @Override
     public List<Card> selectHand(Board board, List<Card> options, int cards) {
         Set<Integer> indices = new HashSet<>();
-        while (indices.size() < Constants.HAND_SIZE) {
+        while (indices.size() < cards) {
             int index = (int)(Math.random() * options.size());
             indices.add(index);
         }
